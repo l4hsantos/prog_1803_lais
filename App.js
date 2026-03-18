@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, } from 'react-native';
+import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -8,14 +9,12 @@ import { FontAwesome } from '@expo/vector-icons';
 
 const Stack = createNativeStackNavigator();
 
-//pasta correspondente a atvd 03 de programação
-
-//instruções: CRIAR 05 TELAS E TREINAR A NAVEGAÇÃO ENTRE ELAS, USANDO O REACT NAVIGATION.
-//AS TELAS SÃO: LOGIN, LISTA DE CONTATO, CADASTRAR USUÁRIOS, CADASTRO DE CONTATO E EXCLUIR/ALTERAR CONTATOS. 
-// CADA TELA DEVE CONTER UM BOTÃO PARA NAVEGAR PARA AS OUTRAS TELAS E INPUT PARA O USUÁRIO ESCREVER.
+//aula do dia 18/03/2026 sobre axios
+const api = axios.create({
+  baseURL: 'https://aulaAXIOS.com'
+});
 
 // ------------ TELA DE LOGIN ------------
-
 
 function Login({ navigation }) {
   const [login, setLogin] = useState('');
@@ -26,38 +25,21 @@ function Login({ navigation }) {
       <FontAwesome name="user-circle" size={80} color="#000000" style={{ marginBottom: 20 }} />
       <Text style={styles.title}>LOGIN!</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="LOGIN..."
-        value={login}
-        onChangeText={setLogin}
-      />
+      <TextInput style={styles.input} placeholder="LOGIN..." value={login} onChangeText={setLogin} />
+      <TextInput style={styles.input} placeholder="SENHA..." secureTextEntry value={senha} onChangeText={setSenha} />
 
-      <TextInput
-        style={styles.input}
-        placeholder="SENHA..."
-        secureTextEntry
-        value={senha}
-        onChangeText={setSenha}
-      />  {/*essas duas linhas criam a caixinha p o usuário preencher a senha e o login*/}
-
-      <TouchableOpacity
-        style={styles.botaoVermelho}
-        onPress={() => navigation.navigate('Lista')}>
+      <TouchableOpacity style={styles.botaoVermelho} onPress={() => navigation.navigate('Lista')}>
         <Text style={styles.textoBotao}>LOGIN</Text>
-        </TouchableOpacity>
+      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.botaoAzul}
-        onPress={() => navigation.navigate('CadastroUsuario')}>
+      <TouchableOpacity style={styles.botaoAzul} onPress={() => navigation.navigate('CadastroUsuario')}>
         <Text style={styles.textoBotao}>CADASTRE-SE</Text>
-        </TouchableOpacity>
+      </TouchableOpacity>
     </SafeAreaView>
+  );
+}
 
-  ); }
-
-
-// ------------ TELA DE LISTA DE CONTATOS ------------
+// ------------ LISTA ------------
 
 function Lista({ navigation }) {
   const [contatos, setContatos] = useState([
@@ -66,16 +48,23 @@ function Lista({ navigation }) {
     { nome: 'Rodrigo Antunes', telefone: '81 987765525', email: 'rodrigo@gmail.com' },
   ]);
 
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        await api.get('/contatos');
+      } catch (e) {
+        console.log(e);
+      }
+    };
+    carregar();
+  }, []);
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.header}>
         <Text style={styles.headerText}>LISTA DE CONTATOS</Text>
 
-        <TouchableOpacity
-          onPress={() =>
-            navigation.navigate('CadastroContato', { setContatos, contatos })
-          }
-        >
+        <TouchableOpacity onPress={() => navigation.navigate('CadastroContato', { setContatos, contatos })}>
           <FontAwesome name="plus" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -103,41 +92,49 @@ function Lista({ navigation }) {
   );
 }
 
-
-// ------------ TELA DE CADASTRO DE USUÁRIOS ------------
+// ------------ CADASTRO USUÁRIO ------------
 
 function CadastroUsuario({ navigation }) {
+  const [nome, setNome] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+
+  const salvarUsuario = async () => {
+    try {
+      await api.post('/usuarios', { nome, cpf, email, senha });
+      navigation.navigate('Login');
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
-
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <FontAwesome name="arrow-left" size={22} color="#fff" />
         </TouchableOpacity>
 
         <Text style={styles.headerText}>Usuário</Text>
-
         <View style={{ width: 22 }} />
       </View>
 
-
       <View style={styles.container}>
-        <TextInput style={styles.input} placeholder="nome" />
-        <TextInput style={styles.input} placeholder="cpf" />
-        <TextInput style={styles.input} placeholder="email" />
-        <TextInput style={styles.input} placeholder="senha" secureTextEntry />
+        <TextInput style={styles.input} placeholder="nome" onChangeText={setNome} />
+        <TextInput style={styles.input} placeholder="cpf" onChangeText={setCpf} />
+        <TextInput style={styles.input} placeholder="email" onChangeText={setEmail} />
+        <TextInput style={styles.input} placeholder="senha" secureTextEntry onChangeText={setSenha} />
 
-        <TouchableOpacity style={styles.botaoAzul}>
+        <TouchableOpacity style={styles.botaoAzul} onPress={salvarUsuario}>
           <Text style={styles.textoBotao}>Salvar</Text>
         </TouchableOpacity>
       </View>
-
     </SafeAreaView>
   );
 }
 
-
-// ------------ TELA DE CADASTRO DE CONTATOS ------------
+// ------------ CADASTRO CONTATO ------------
 
 function CadastroContato({ navigation, route }) {
   const [nome, setNome] = useState('');
@@ -146,10 +143,16 @@ function CadastroContato({ navigation, route }) {
 
   const { contatos, setContatos } = route.params;
 
-  const salvar = () => {
+  const salvar = async () => {
     const novo = { nome, email, telefone };
-    setContatos([...contatos, novo]);
-    navigation.goBack();
+
+    try {
+      await api.post('/contatos', novo);
+      setContatos([...contatos, novo]);
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return (
@@ -167,7 +170,7 @@ function CadastroContato({ navigation, route }) {
   );
 }
 
-// ------------ TELA DE ALTERAR E EXCLUIR CONTATOS ------------
+// ------------ ALTERAR / EXCLUIR ------------
 
 function AlterarExcluir({ navigation, route }) {
   const { contato, index, contatos, setContatos } = route.params;
@@ -176,17 +179,28 @@ function AlterarExcluir({ navigation, route }) {
   const [email, setEmail] = useState(contato.email);
   const [telefone, setTelefone] = useState(contato.telefone);
 
-  const alterar = () => {
+  const alterar = async () => {
     const lista = [...contatos];
     lista[index] = { nome, email, telefone };
-    setContatos(lista);
-    navigation.goBack();
+
+    try {
+      await api.put(`/contatos/${index}`, lista[index]);
+      setContatos(lista);
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+    }
   };
 
-  const excluir = () => {
-    const lista = contatos.filter((_, i) => i !== index);
-    setContatos(lista);
-    navigation.goBack();
+  const excluir = async () => {
+    try {
+      await api.delete(`/contatos/${index}`);
+      const lista = contatos.filter((_, i) => i !== index);
+      setContatos(lista);
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   return (
@@ -208,14 +222,15 @@ function AlterarExcluir({ navigation, route }) {
   );
 }
 
-// ------------ FUNÇÕES DO APP ------------
+// ------------ APP ------------
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="Lista" component={Lista} options={{headerTitleAlign: 'center'}}/>
+          <Stack.Screen name="Lista" component={Lista} />
           <Stack.Screen name="CadastroUsuario" component={CadastroUsuario} />
           <Stack.Screen name="CadastroContato" component={CadastroContato} />
           <Stack.Screen name="AlterarExcluir" component={AlterarExcluir} />
@@ -224,7 +239,6 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-
 
 
 // ------------ STYLE ------------
