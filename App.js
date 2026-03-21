@@ -1,6 +1,5 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
@@ -9,12 +8,12 @@ import { FontAwesome } from '@expo/vector-icons';
 
 const Stack = createNativeStackNavigator();
 
-//aula do dia 18/03/2026 sobre axios
+// axios
 const api = axios.create({
   baseURL: 'https://aulaAXIOS.com'
 });
 
-// ------------ TELA DE LOGIN ------------
+// ------------ LOGIN ------------
 
 function Login({ navigation }) {
   const [login, setLogin] = useState('');
@@ -22,7 +21,7 @@ function Login({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <FontAwesome name="user-circle" size={80} color="#000000" style={{ marginBottom: 20 }} />
+      <FontAwesome name="user-circle" size={80} color="#000" style={{ marginBottom: 20 }} />
       <Text style={styles.title}>LOGIN!</Text>
 
       <TextInput style={styles.input} placeholder="LOGIN..." value={login} onChangeText={setLogin} />
@@ -42,18 +41,19 @@ function Login({ navigation }) {
 // ------------ LISTA ------------
 
 function Lista({ navigation }) {
-  const [contatos, setContatos] = useState([
-    { nome: 'Marcos Andrade', telefone: '81 988553424', email: 'marcos@gmail.com' },
-    { nome: 'Patrícia Tavares', telefone: '81 998765332', email: 'patricia@gmail.com' },
-    { nome: 'Rodrigo Antunes', telefone: '81 987765525', email: 'rodrigo@gmail.com' },
-  ]);
+  const [contatos, setContatos] = useState([]);
 
   useEffect(() => {
     const carregar = async () => {
       try {
-        await api.get('/contatos');
+        const response = await api.get('/contatos');
+        setContatos(response.data);
       } catch (e) {
-        console.log(e);
+        setContatos([
+              { id: '1', nome: 'Marcos Andrade', telefone: '81 988553424', email: 'marcos@gmail.com' },
+    { id: '2', nome: 'Patrícia Tavares', telefone: '81 998765332', email: 'patricia@gmail.com' },
+    { id: '3', nome: 'Rodrigo Antunes', telefone: '81 987765525', email: 'rodrigo@gmail.com' },
+  ]);
       }
     };
     carregar();
@@ -70,14 +70,13 @@ function Lista({ navigation }) {
       </View>
 
       <ScrollView>
-        {contatos.map((item, index) => (
+        {contatos.map((item) => (
           <TouchableOpacity
-            key={index}
+            key={item.id}
             style={styles.card}
             onPress={() =>
               navigation.navigate('AlterarExcluir', {
                 contato: item,
-                index,
                 contatos,
                 setContatos,
               })
@@ -103,10 +102,10 @@ function CadastroUsuario({ navigation }) {
   const salvarUsuario = async () => {
     try {
       await api.post('/usuarios', { nome, cpf, email, senha });
-      navigation.navigate('Login');
     } catch (e) {
       console.log(e);
     }
+    navigation.navigate('Login');
   };
 
   return (
@@ -144,28 +143,43 @@ function CadastroContato({ navigation, route }) {
   const { contatos, setContatos } = route.params;
 
   const salvar = async () => {
-    const novo = { nome, email, telefone };
+    const novo = {
+      id: Date.now().toString(),
+      nome,
+      email,
+      telefone,
+    };
 
     try {
       await api.post('/contatos', novo);
-      setContatos([...contatos, novo]);
-      navigation.goBack();
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) {}
+
+    setContatos([...contatos, novo]);
+    navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>CADASTRO DE CONTATO</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <FontAwesome name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
 
-      <TextInput style={styles.input} placeholder="Nome" onChangeText={setNome} />
-      <TextInput style={styles.input} placeholder="Email" onChangeText={setEmail} />
-      <TextInput style={styles.input} placeholder="Telefone" onChangeText={setTelefone} />
+        <Text style={styles.headerText}>Cadastro</Text>
+        <View style={{ width: 22 }} />
+      </View>
 
-      <TouchableOpacity style={styles.botaoAzul} onPress={salvar}>
-        <Text style={styles.textoBotao}>Salvar</Text>
-      </TouchableOpacity>
+      <View style={styles.container}>
+        <Text style={styles.titulo}>CADASTRO DE CONTATO</Text>
+
+        <TextInput style={styles.input} placeholder="Nome" onChangeText={setNome} />
+        <TextInput style={styles.input} placeholder="Email" onChangeText={setEmail} />
+        <TextInput style={styles.input} placeholder="Telefone" onChangeText={setTelefone} />
+
+        <TouchableOpacity style={styles.botaoAzul} onPress={salvar}>
+          <Text style={styles.textoBotao}>Salvar</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -173,51 +187,61 @@ function CadastroContato({ navigation, route }) {
 // ------------ ALTERAR / EXCLUIR ------------
 
 function AlterarExcluir({ navigation, route }) {
-  const { contato, index, contatos, setContatos } = route.params;
+  const { contato, contatos, setContatos } = route.params;
 
   const [nome, setNome] = useState(contato.nome);
   const [email, setEmail] = useState(contato.email);
   const [telefone, setTelefone] = useState(contato.telefone);
 
   const alterar = async () => {
-    const lista = [...contatos];
-    lista[index] = { nome, email, telefone };
+    const lista = contatos.map((c) =>
+      c.id === contato.id ? { ...c, nome, email, telefone } : c
+    );
 
     try {
-      await api.put(`/contatos/${index}`, lista[index]);
-      setContatos(lista);
-      navigation.goBack();
-    } catch (e) {
-      console.log(e);
-    }
+      await api.put(`/contatos/${contato.id}`, { nome, email, telefone });
+    } catch (e) {}
+
+    setContatos(lista);
+    navigation.goBack();
   };
 
   const excluir = async () => {
     try {
-      await api.delete(`/contatos/${index}`);
-      const lista = contatos.filter((_, i) => i !== index);
-      setContatos(lista);
-      navigation.goBack();
-    } catch (e) {
-      console.log(e);
-    }
+      await api.delete(`/contatos/${contato.id}`);
+    } catch (e) {}
+
+    const lista = contatos.filter((c) => c.id !== contato.id);
+    setContatos(lista);
+    navigation.goBack();
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.titulo}>ALTERAÇÃO / EXCLUSÃO DE CONTATOS</Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <FontAwesome name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
 
-      <TextInput style={styles.input} value={nome} onChangeText={setNome} />
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} />
-      <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} />
+        <Text style={styles.headerText}>Editar Contato</Text>
+        <View style={{ width: 22 }} />
+      </View>
 
-      <TouchableOpacity style={styles.botaoAzul} onPress={alterar}>
-        <Text style={styles.textoBotao}>Alterar</Text>
-      </TouchableOpacity>
+      <View style={styles.container}>
+        <Text style={styles.titulo}>ALTERAÇÃO / EXCLUSÃO</Text>
 
-      <TouchableOpacity style={styles.botaoVermelho} onPress={excluir}>
-        <Text style={styles.textoBotao}>Excluir</Text>
-      </TouchableOpacity>
+        <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+        <TextInput style={styles.input} value={email} onChangeText={setEmail} />
+        <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} />
+
+        <TouchableOpacity style={styles.botaoAzul} onPress={alterar}>
+          <Text style={styles.textoBotao}>Alterar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.botaoVermelho} onPress={excluir}>
+          <Text style={styles.textoBotao}>Excluir</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -240,14 +264,20 @@ export default function App() {
   );
 }
 
-
 // ------------ STYLE ------------
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f4e4b8',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
 
   titulo: {
