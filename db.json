@@ -1,0 +1,40 @@
+{
+  "usuarios": [
+    {
+      "id": "1",
+      "nome": "Cecília Tavares",
+      "cpf": "123.456.789-00",
+      "email": "teste@gmail.com",
+      "senha": "987654"
+    },
+    {
+      "id": "3",
+      "nome": "Carolina Menezes",
+      "cpf": "123.456.789-00",
+      "email": "teste@gmail.com",
+      "senha": "987654"
+    },
+    {
+      "id": "0-Cuj7CRghs",
+      "nome": "Laís Silva",
+      "cpf": "111.222.333-44",
+      "email": "lais@gmail.com",
+      "senha": "15102017"
+    }
+  ],
+  "contatos": [
+    {
+      "id": "1",
+      "nome": "Messias Acacy JR",
+      "email": "123.456.789-00",
+      "telefone": "(81) 91234-5678"
+    },
+    {
+      "id": "mP_R5mvrrGM",
+      "nome": "Nilson Cândido",
+      "email": "nilson@gmail.com",
+      "telefone": "(81) 99999-9999"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

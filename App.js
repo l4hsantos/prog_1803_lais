@@ -10,7 +10,7 @@ const Stack = createNativeStackNavigator();
 
 // axios
 const api = axios.create({
-  baseURL: 'https://aulaAXIOS.com'
+  baseURL: 'http://localhost:3000'
 });
 
 // ------------ LOGIN ------------
@@ -19,15 +19,33 @@ function Login({ navigation }) {
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
 
+    const handleLogin = async () => {
+    try {
+      const response = await api.get('/usuarios');
+
+      const usuario = response.data.find(
+        (u) => u.email === login && u.senha === senha
+      );
+
+      if (usuario) {
+        navigation.navigate('Lista');
+      } else {
+        alert('Usuário ou senha inválidos');
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <FontAwesome name="user-circle" size={80} color="#000" style={{ marginBottom: 20 }} />
       <Text style={styles.title}>LOGIN!</Text>
 
-      <TextInput style={styles.input} placeholder="LOGIN..." value={login} onChangeText={setLogin} />
+      <TextInput style={styles.input} placeholder="EMAIL..." value={login} onChangeText={setLogin} />
       <TextInput style={styles.input} placeholder="SENHA..." secureTextEntry value={senha} onChangeText={setSenha} />
 
-      <TouchableOpacity style={styles.botaoVermelho} onPress={() => navigation.navigate('Lista')}>
+      <TouchableOpacity style={styles.botaoVermelho} onPress={handleLogin}>
         <Text style={styles.textoBotao}>LOGIN</Text>
       </TouchableOpacity>
 
@@ -43,21 +61,15 @@ function Login({ navigation }) {
 function Lista({ navigation }) {
   const [contatos, setContatos] = useState([]);
 
-  useEffect(() => {
-    const carregar = async () => {
-      try {
-        const response = await api.get('/contatos');
-        setContatos(response.data);
-      } catch (e) {
-        setContatos([
-              { id: '1', nome: 'Marcos Andrade', telefone: '81 988553424', email: 'marcos@gmail.com' },
-    { id: '2', nome: 'Patrícia Tavares', telefone: '81 998765332', email: 'patricia@gmail.com' },
-    { id: '3', nome: 'Rodrigo Antunes', telefone: '81 987765525', email: 'rodrigo@gmail.com' },
-  ]);
-      }
-    };
-    carregar();
-  }, []);
+ const carregar = async () => {
+    try {
+      const response = await api.get('/contatos');
+      setContatos(response.data);
+    } catch (e) {
+      console.log(e);
+      setContatos([]); }};
+
+  useEffect(() => { carregar(); }, []);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -99,14 +111,22 @@ function CadastroUsuario({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-  const salvarUsuario = async () => {
-    try {
-      await api.post('/usuarios', { nome, cpf, email, senha });
-    } catch (e) {
-      console.log(e);
-    }
-    navigation.navigate('Login');
+const salvarUsuario = async () => {
+  const novo = {
+    id: Date.now().toString(),
+    nome,
+    cpf,
+    email,
+    senha,
   };
+
+  try {
+    await api.post('/usuarios', novo);
+    navigation.navigate('Login');
+  } catch (e) {
+    console.log(e);
+  }
+};
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -142,21 +162,23 @@ function CadastroContato({ navigation, route }) {
 
   const { contatos, setContatos } = route.params;
 
-  const salvar = async () => {
-    const novo = {
-      id: Date.now().toString(),
-      nome,
-      email,
-      telefone,
-    };
+const salvar = async () => {
+  const novo = {
+    id: Date.now(),
+    nome,
+    email,
+    telefone,
+  };
 
-    try {
-      await api.post('/contatos', novo);
-    } catch (e) {}
+  try {
+    await api.post('/contatos', novo);
 
     setContatos([...contatos, novo]);
     navigation.goBack();
-  };
+  } catch (e) {
+    console.log(e);
+  }
+};
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -193,28 +215,37 @@ function AlterarExcluir({ navigation, route }) {
   const [email, setEmail] = useState(contato.email);
   const [telefone, setTelefone] = useState(contato.telefone);
 
-  const alterar = async () => {
+const alterar = async () => {
+  try {
+    await api.put(`/contatos/${contato.id}`, {
+      nome,
+      email,
+      telefone,
+    });
+
     const lista = contatos.map((c) =>
       c.id === contato.id ? { ...c, nome, email, telefone } : c
     );
 
-    try {
-      await api.put(`/contatos/${contato.id}`, { nome, email, telefone });
-    } catch (e) {}
-
     setContatos(lista);
     navigation.goBack();
-  };
+  } catch (e) {
+    console.log(e);
+  }
+};
 
-  const excluir = async () => {
-    try {
-      await api.delete(`/contatos/${contato.id}`);
-    } catch (e) {}
+const excluir = async () => {
+  try {
+    await api.delete(`/contatos/${contato.id}`);
 
     const lista = contatos.filter((c) => c.id !== contato.id);
     setContatos(lista);
+
     navigation.goBack();
-  };
+  } catch (e) {
+    console.log(e);
+  }
+};
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
