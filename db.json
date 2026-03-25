@@ -20,6 +20,16 @@
       "cpf": "111.222.333-44",
       "email": "lais@gmail.com",
       "senha": "15102017"
+    },
+    {
+      "id": "5xnBF9MPk_8"
+    },
+    {
+      "id": "kNnt77P4klc",
+      "nome": "Carolina Torres",
+      "cpf": "000.111.222-33",
+      "email": "carolina@gmail.com",
+      "senha": "cT123"
     }
   ],
   "contatos": [
@@ -34,6 +44,13 @@
       "nome": "Nilson Cândido",
       "email": "nilson@gmail.com",
       "telefone": "(81) 99999-9999"
+    },
+    {
+      "id": "FNh8qo_ldH4",
+      "nome": "Severino Santana",
+      "cpf": "333.444.555-11",
+      "email": "severino@gmail.com",
+      "senha": "santana444"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
