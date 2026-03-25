@@ -1,86 +1,108 @@
 import axios from 'axios';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TextInput, ScrollView, TouchableOpacity, Button } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { FontAwesome } from '@expo/vector-icons';
+import { FlatList } from 'react-native';
 
 const Stack = createNativeStackNavigator();
-
-// axios
-const api = axios.create({
-  baseURL: 'http://localhost:3000'
-});
-
 // ------------ LOGIN ------------
 
 function Login({ navigation }) {
-  const [login, setLogin] = useState('');
+
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-    const handleLogin = async () => {
+  async function logar() {
     try {
-      const response = await api.get('/usuarios');
-
-      const usuario = response.data.find(
-        (u) => u.email === login && u.senha === senha
-      );
-
-      if (usuario) {
-        navigation.navigate('Lista');
-      } else {
-        alert('Usuário ou senha inválidos');
+      if (!email || !senha) {
+        alert('Preencha email e senha');
+        return;
       }
-    } catch (e) {
-      console.log(e);
+
+      axios.get(`http://localhost:3000/usuarios?email=${email}&senha=${senha}`)
+        .then(function (response) {
+          if (response.data.length > 0) {
+            navigation.navigate('Lista', { usuario: response.data[0] });
+          } else {
+            alert('Email ou senha inválidos');
+          }
+        })
+        .catch(function (error) {
+          console.log(error);
+          alert('Erro ao se conectar a API');
+        });
+
+    } catch (error) {
+      console.log('Erro ao logar:', error.message);
+      alert('Não é possível se conectar a API');
     }
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <FontAwesome name="user-circle" size={80} color="#000" style={{ marginBottom: 20 }} />
-      <Text style={styles.title}>LOGIN!</Text>
 
-      <TextInput style={styles.input} placeholder="EMAIL..." value={login} onChangeText={setLogin} />
-      <TextInput style={styles.input} placeholder="SENHA..." secureTextEntry value={senha} onChangeText={setSenha} />
+      <Text style={styles.title}>LOGIN</Text>
 
-      <TouchableOpacity style={styles.botaoVermelho} onPress={handleLogin}>
-        <Text style={styles.textoBotao}>LOGIN</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="EMAIL..."
+        value={email}
+        onChangeText={setEmail}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="SENHA..."
+        value={senha}
+        onChangeText={setSenha}
+        secureTextEntry
+      />
+
+      <TouchableOpacity style={styles.botaoAzul} onPress={logar}>
+        <Text style={styles.textoBotao}>ENTRAR</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.botaoAzul} onPress={() => navigation.navigate('CadastroUsuario')}>
+      <TouchableOpacity style={styles.botaoVermelho} onPress={() => navigation.navigate('CadastroUsuario')}>
         <Text style={styles.textoBotao}>CADASTRE-SE</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
 }
 
-// ------------ LISTA ------------
+//------------ LISTA ------------
+function Lista({ navigation, route }) {
 
-function Lista({ navigation }) {
   const [contatos, setContatos] = useState([]);
+  const { usuario } = route.params;
 
- const carregar = async () => {
-    try {
-      const response = await api.get('/contatos');
-      setContatos(response.data);
-    } catch (e) {
-      console.log(e);
-      setContatos([]); }};
+useEffect(() => {
+  const unsubscribe = navigation.addListener('focus', () => {
+    axios.get(`http://localhost:3000/contatos?usuario_id=${usuario.id}`)
+      .then(response => setContatos(response.data))
+      .catch(error => console.log(error));
+  });
 
-  useEffect(() => { carregar(); }, []);
+  return unsubscribe;
+}, [navigation]);
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.header}>
         <Text style={styles.headerText}>LISTA DE CONTATOS</Text>
 
-        <TouchableOpacity onPress={() => navigation.navigate('CadastroContato', { setContatos, contatos })}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate('CadastroContato', { usuario })
+          }
+        >
           <FontAwesome name="plus" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
-
       <ScrollView>
         {contatos.map((item) => (
           <TouchableOpacity
@@ -88,9 +110,7 @@ function Lista({ navigation }) {
             style={styles.card}
             onPress={() =>
               navigation.navigate('AlterarExcluir', {
-                contato: item,
-                contatos,
-                setContatos,
+                contato: item
               })
             }
           >
@@ -99,181 +119,205 @@ function Lista({ navigation }) {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
     </SafeAreaView>
   );
 }
 
-// ------------ CADASTRO USUÁRIO ------------
+//------------ CADASTRO USUÁRIO ------------
 
 function CadastroUsuario({ navigation }) {
+
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
-const salvarUsuario = async () => {
-  const novo = {
-    id: Date.now().toString(),
-    nome,
-    cpf,
-    email,
-    senha,
-  };
+  async function salvar() {
+    try {
+      const usuario = {
+        nome,
+        cpf,
+        email,
+        senha
+      };
 
-  try {
-    await api.post('/usuarios', novo);
-    navigation.navigate('Login');
-  } catch (e) {
-    console.log(e);
+      await axios.post('http://localhost:3000/usuarios', usuario);
+
+      alert('Usuário cadastrado!');
+      navigation.goBack();
+
+    } catch (error) {
+      console.log(error);
+      alert('Erro ao cadastrar usuário');
+    }
   }
-};
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <FontAwesome name="arrow-left" size={22} color="#fff" />
-        </TouchableOpacity>
+      <SafeAreaView style={styles.container}>
 
-        <Text style={styles.headerText}>Usuário</Text>
-        <View style={{ width: 22 }} />
-      </View>
+        <Text style={styles.title}>Cadastro de Usuário</Text>
 
-      <View style={styles.container}>
-        <TextInput style={styles.input} placeholder="nome" onChangeText={setNome} />
-        <TextInput style={styles.input} placeholder="cpf" onChangeText={setCpf} />
-        <TextInput style={styles.input} placeholder="email" onChangeText={setEmail} />
-        <TextInput style={styles.input} placeholder="senha" secureTextEntry onChangeText={setSenha} />
+        <TextInput
+          style={styles.input}
+          placeholder="Nome"
+          value={nome}
+          onChangeText={setNome}
+        />
 
-        <TouchableOpacity style={styles.botaoAzul} onPress={salvarUsuario}>
-          <Text style={styles.textoBotao}>Salvar</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
-}
+        <TextInput
+          style={styles.input}
+          placeholder="CPF"
+          value={cpf}
+          onChangeText={setCpf}
+        />
 
-// ------------ CADASTRO CONTATO ------------
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-function CadastroContato({ navigation, route }) {
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
-
-  const { contatos, setContatos } = route.params;
-
-const salvar = async () => {
-  const novo = {
-    id: Date.now(),
-    nome,
-    email,
-    telefone,
-  };
-
-  try {
-    await api.post('/contatos', novo);
-
-    setContatos([...contatos, novo]);
-    navigation.goBack();
-  } catch (e) {
-    console.log(e);
-  }
-};
-
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesome name="arrow-left" size={22} color="#fff" />
-        </TouchableOpacity>
-
-        <Text style={styles.headerText}>Cadastro</Text>
-        <View style={{ width: 22 }} />
-      </View>
-
-      <View style={styles.container}>
-        <Text style={styles.titulo}>CADASTRO DE CONTATO</Text>
-
-        <TextInput style={styles.input} placeholder="Nome" onChangeText={setNome} />
-        <TextInput style={styles.input} placeholder="Email" onChangeText={setEmail} />
-        <TextInput style={styles.input} placeholder="Telefone" onChangeText={setTelefone} />
+        <TextInput
+          style={styles.input}
+          placeholder="Senha"
+          value={senha}
+          onChangeText={setSenha}
+          secureTextEntry
+        />
 
         <TouchableOpacity style={styles.botaoAzul} onPress={salvar}>
           <Text style={styles.textoBotao}>Salvar</Text>
         </TouchableOpacity>
-      </View>
+
+      </SafeAreaView>
     </SafeAreaView>
   );
 }
 
-// ------------ ALTERAR / EXCLUIR ------------
+//------------ CADASTRO CONTATO ------------
+
+function CadastroContato({ navigation, route }) {
+
+  const { usuario } = route.params;
+
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefone, setTelefone] = useState('');
+
+  const salvar = async () => {
+    try {
+      const novo = {
+        usuario_id: usuario.id,
+        nome,
+        email,
+        telefone,
+      };
+
+      await axios.post('http://localhost:3000/contatos', novo);
+
+      alert('Contato cadastrado!');
+      navigation.goBack();
+
+    } catch (e) {
+      console.log(e);
+      alert('Erro ao cadastrar contato');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Novo Contato</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Nome"
+        onChangeText={setNome}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        onChangeText={setEmail}
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Telefone"
+        onChangeText={setTelefone}
+      />
+
+      <Button title="Salvar" onPress={salvar} />
+    </View>
+  );
+}
+
+//------------ALTERAR / EXCLUIR ------------
 
 function AlterarExcluir({ navigation, route }) {
-  const { contato, contatos, setContatos } = route.params;
+
+  const { contato } = route.params;
 
   const [nome, setNome] = useState(contato.nome);
   const [email, setEmail] = useState(contato.email);
   const [telefone, setTelefone] = useState(contato.telefone);
 
-const alterar = async () => {
-  try {
-    await api.put(`/contatos/${contato.id}`, {
-      nome,
-      email,
-      telefone,
-    });
+  const alterar = async () => {
+    try {
+      await axios.put(`http://localhost:3000/contatos/${contato.id}`, {
+        ...contato,
+        nome,
+        email,
+        telefone,
+      });
 
-    const lista = contatos.map((c) =>
-      c.id === contato.id ? { ...c, nome, email, telefone } : c
-    );
+      alert('Contato atualizado!');
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+      alert('Erro ao atualizar');
+    }
+  };
 
-    setContatos(lista);
-    navigation.goBack();
-  } catch (e) {
-    console.log(e);
-  }
-};
+  const excluir = async () => {
+    try {
+      await axios.delete(`http://localhost:3000/contatos/${contato.id}`);
 
-const excluir = async () => {
-  try {
-    await api.delete(`/contatos/${contato.id}`);
-
-    const lista = contatos.filter((c) => c.id !== contato.id);
-    setContatos(lista);
-
-    navigation.goBack();
-  } catch (e) {
-    console.log(e);
-  }
-};
+      alert('Contato excluído!');
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+      alert('Erro ao excluir');
+    }
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <FontAwesome name="arrow-left" size={22} color="#fff" />
-        </TouchableOpacity>
+    <View style={styles.container}>
+      <Text style={styles.title}>Editar Contato</Text>
 
-        <Text style={styles.headerText}>Editar Contato</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <TextInput
+        style={styles.input}
+        value={nome}
+        onChangeText={setNome}
+      />
 
-      <View style={styles.container}>
-        <Text style={styles.titulo}>ALTERAÇÃO / EXCLUSÃO</Text>
+      <TextInput
+        style={styles.input}
+        value={telefone}
+        onChangeText={setTelefone}
+      />
 
-        <TextInput style={styles.input} value={nome} onChangeText={setNome} />
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} />
-        <TextInput style={styles.input} value={telefone} onChangeText={setTelefone} />
+      <TextInput
+        style={styles.input}
+        value={email}
+        onChangeText={setEmail}
+      />
 
-        <TouchableOpacity style={styles.botaoAzul} onPress={alterar}>
-          <Text style={styles.textoBotao}>Alterar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.botaoVermelho} onPress={excluir}>
-          <Text style={styles.textoBotao}>Excluir</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+      <Button title="Alterar" onPress={alterar} />
+      <Button title="Excluir" onPress={excluir} />
+    </View>
   );
 }
 
@@ -283,7 +327,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+        <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: true }}>
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="Lista" component={Lista} />
           <Stack.Screen name="CadastroUsuario" component={CadastroUsuario} />

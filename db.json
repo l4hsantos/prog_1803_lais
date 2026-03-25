@@ -1,56 +1,34 @@
 {
   "usuarios": [
     {
-      "id": "1",
-      "nome": "Cecília Tavares",
-      "cpf": "123.456.789-00",
-      "email": "teste@gmail.com",
-      "senha": "987654"
-    },
-    {
-      "id": "3",
-      "nome": "Carolina Menezes",
-      "cpf": "123.456.789-00",
-      "email": "teste@gmail.com",
-      "senha": "987654"
-    },
-    {
-      "id": "0-Cuj7CRghs",
-      "nome": "Laís Silva",
+      "nome": "Laís Alves",
       "cpf": "111.222.333-44",
       "email": "lais@gmail.com",
-      "senha": "15102017"
+      "senha": "l051009",
+      "id": "xs7TnMXz3ro"
     },
     {
-      "id": "5xnBF9MPk_8"
+      "nome": "Kelven Oliveira",
+      "cpf": "333.444.555-77",
+      "email": "kelven@gmail.com",
+      "senha": "kelkel",
+      "id": "sfUpnnXUajw"
     },
     {
-      "id": "kNnt77P4klc",
-      "nome": "Carolina Torres",
-      "cpf": "000.111.222-33",
-      "email": "carolina@gmail.com",
-      "senha": "cT123"
+      "nome": "Marina Oliveira",
+      "cpf": "777.333.111-22",
+      "email": "marina@gmail.com",
+      "senha": "mar33",
+      "id": "6B8qZxWXx1E"
     }
   ],
   "contatos": [
     {
-      "id": "1",
-      "nome": "Messias Acacy JR",
-      "email": "123.456.789-00",
-      "telefone": "(81) 91234-5678"
-    },
-    {
-      "id": "mP_R5mvrrGM",
-      "nome": "Nilson Cândido",
-      "email": "nilson@gmail.com",
-      "telefone": "(81) 99999-9999"
-    },
-    {
-      "id": "FNh8qo_ldH4",
-      "nome": "Severino Santana",
-      "cpf": "333.444.555-11",
-      "email": "severino@gmail.com",
-      "senha": "santana444"
+      "usuario_id": "6B8qZxWXx1E",
+      "nome": "João",
+      "email": "joao@gmail.com",
+      "telefone": "(81) 94455-6600",
+      "id": "BUrmsi1968M"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
