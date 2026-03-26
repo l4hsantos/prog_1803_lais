@@ -315,8 +315,12 @@ function AlterarExcluir({ navigation, route }) {
         onChangeText={setEmail}
       />
 
-      <Button title="Alterar" onPress={alterar} />
-      <Button title="Excluir" onPress={excluir} />
+      <TouchableOpacity style={styles.botaoAzul} onPress={alterar}>
+        <Text style={styles.textoBotao}>ALTERAR</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.botaoVermelho} onPress={excluir}>
+        <Text style={styles.textoBotao}>EXCLUIR</Text>
+      </TouchableOpacity>
     </View>
   );
 }
